@@ -1,3 +1,12 @@
+const fs = require('fs');
+const path = require('path');
+
+// Ensure the /data directory exists
+const dataDir = '/data';
+if (!fs.existsSync(dataDir)) {
+    fs.mkdirSync(dataDir, { recursive: true });
+    console.log(`📁 Created directory: ${dataDir}`);
+}
 // server.js – Full REST API with SQLite database (Complete)
 const express = require('express');
 const sqlite3 = require('sqlite3').verbose();
