@@ -2,7 +2,8 @@ const fs = require('fs');
 const path = require('path');
 
 // Ensure the /data directory exists
-const dataDir = '/data';
+// Use a local folder that Render can write to
+const dataDir = './data';
 if (!fs.existsSync(dataDir)) {
     fs.mkdirSync(dataDir, { recursive: true });
     console.log(`📁 Created directory: ${dataDir}`);
@@ -29,7 +30,7 @@ app.use(session({
 }));
 
 // --- Database setup ---
-const db = new sqlite3.Database('/data/clinic.db', (err) => { 
+const db = new sqlite3.Database('./data/clinic.db', (err) => {
     if (err) console.error('DB connection error:', err.message);
     else console.log('Connected to SQLite database.');
 });
