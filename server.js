@@ -134,27 +134,21 @@ db.serialize(() => {
         emergency TEXT
     )`);
 
-    // ---- SEED DATA (with admin password reset) ----
-    // 1. Admin user – create if not exists, then always reset password
-    db.get("SELECT * FROM users WHERE username = 'admin'", (err, row) => {
-        if (!row) {
-            db.run("INSERT INTO users (username, password) VALUES ('admin', 'password')", function(err) {
-                if (!err) console.log('✅ Admin user created (admin / password)');
-                else console.error('Error creating admin:', err.message);
-            });
-        } else {
-            // Reset password to ensure it's always 'password'
-            db.run("UPDATE users SET password = 'password' WHERE username = 'admin'", function(err) {
-                if (err) {
-                    console.error('Error resetting admin password:', err.message);
-                } else {
-                    console.log('✅ Admin password reset to: password');
-                }
-            });
-        }
+    // ---- FORCE ADMIN PASSWORD RESET ----
+    // This runs EVERY TIME the app starts – guaranteed to work
+    db.run("INSERT OR IGNORE INTO users (username, password) VALUES ('admin', 'password')", function(err) {
+        if (err) console.error('Error creating admin:', err.message);
+        else console.log('✅ Admin user ensured.');
     });
 
-    // 2. Contact info
+    db.run("UPDATE users SET password = 'password' WHERE username = 'admin'", function(err) {
+        if (err) console.error('Error resetting admin password:', err.message);
+        else if (this.changes > 0) console.log('✅ Admin password reset to: password');
+        else console.log('✅ Admin password is already set.');
+    });
+
+    // ---- SEED DATA (only if tables are empty) ----
+    // 1. Contact info
     db.get("SELECT * FROM contactInfo LIMIT 1", (err, row) => {
         if (!row) {
             db.run(`
@@ -173,7 +167,7 @@ db.serialize(() => {
         }
     });
 
-    // 3. Stats
+    // 2. Stats
     db.get("SELECT * FROM stats LIMIT 1", (err, row) => {
         if (!row) {
             db.run("INSERT INTO stats (patients, satisfaction, emergency) VALUES ('10K+', '98%', '24/7')");
@@ -181,7 +175,7 @@ db.serialize(() => {
         }
     });
 
-    // 4. Services (14 items)
+    // 3. Services (14 items)
     db.get("SELECT * FROM services LIMIT 1", (err, row) => {
         if (!row) {
             const services = [
@@ -207,7 +201,7 @@ db.serialize(() => {
         }
     });
 
-    // 5. Departments
+    // 4. Departments
     db.get("SELECT * FROM departments LIMIT 1", (err, row) => {
         if (!row) {
             const depts = ['Internal Medicine', 'Pediatrics', 'Obstetrics & Gynecology', 'Dermatology', 'Psychiatry', 'ENT', 'Pathology', 'Emergency'];
@@ -218,7 +212,7 @@ db.serialize(() => {
         }
     });
 
-    // 6. Doctors (6)
+    // 5. Doctors (6)
     db.get("SELECT * FROM doctors LIMIT 1", (err, row) => {
         if (!row) {
             const doctors = [
@@ -239,7 +233,7 @@ db.serialize(() => {
         }
     });
 
-    // 7. Testimonials (4)
+    // 6. Testimonials (4)
     db.get("SELECT * FROM testimonials LIMIT 1", (err, row) => {
         if (!row) {
             const testimonials = [
@@ -255,7 +249,7 @@ db.serialize(() => {
         }
     });
 
-    // 8. Health Packages (2)
+    // 7. Health Packages (2)
     db.get("SELECT * FROM healthPackages LIMIT 1", (err, row) => {
         if (!row) {
             const packages = [
@@ -269,7 +263,7 @@ db.serialize(() => {
         }
     });
 
-    // 9. FAQs (4)
+    // 8. FAQs (4)
     db.get("SELECT * FROM faqs LIMIT 1", (err, row) => {
         if (!row) {
             const faqs = [
