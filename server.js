@@ -35,12 +35,26 @@ const db = new sqlite3.Database('./data/clinic.db', (err) => {
 
 // --- Create tables & seed data ---
 db.serialize(() => {
-    // Create all tables
+    // Create users table if not exists
     db.run(`CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         username TEXT UNIQUE,
         password TEXT
     )`);
+
+    // 🔑 FORCE RESET ADMIN PASSWORD TO A NUMBER
+    // Delete old admin and create new with password '12345'
+    db.run("DELETE FROM users WHERE username = 'admin'", function(err) {
+        if (err) console.error('Error deleting admin:', err.message);
+        else console.log('✅ Removed old admin user');
+    });
+
+    db.run("INSERT INTO users (username, password) VALUES ('admin', '12345')", function(err) {
+        if (err) console.error('Error creating admin:', err.message);
+        else console.log('✅ Admin user created with password: 12345');
+    });
+
+    // ---- CREATE ALL OTHER TABLES ----
     db.run(`CREATE TABLE IF NOT EXISTS doctors (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT,
@@ -134,21 +148,8 @@ db.serialize(() => {
         emergency TEXT
     )`);
 
-    // ---- FORCE ADMIN PASSWORD RESET ----
-    // This runs EVERY TIME the app starts – guaranteed to work
-    db.run("INSERT OR IGNORE INTO users (username, password) VALUES ('admin', 'password')", function(err) {
-        if (err) console.error('Error creating admin:', err.message);
-        else console.log('✅ Admin user ensured.');
-    });
-
-    db.run("UPDATE users SET password = 'password' WHERE username = 'admin'", function(err) {
-        if (err) console.error('Error resetting admin password:', err.message);
-        else if (this.changes > 0) console.log('✅ Admin password reset to: password');
-        else console.log('✅ Admin password is already set.');
-    });
-
-    // ---- SEED DATA (only if tables are empty) ----
-    // 1. Contact info
+    // ---- SEED DATA ----
+    // Contact info
     db.get("SELECT * FROM contactInfo LIMIT 1", (err, row) => {
         if (!row) {
             db.run(`
@@ -167,7 +168,7 @@ db.serialize(() => {
         }
     });
 
-    // 2. Stats
+    // Stats
     db.get("SELECT * FROM stats LIMIT 1", (err, row) => {
         if (!row) {
             db.run("INSERT INTO stats (patients, satisfaction, emergency) VALUES ('10K+', '98%', '24/7')");
@@ -175,7 +176,7 @@ db.serialize(() => {
         }
     });
 
-    // 3. Services (14 items)
+    // Services (14 items)
     db.get("SELECT * FROM services LIMIT 1", (err, row) => {
         if (!row) {
             const services = [
@@ -201,7 +202,7 @@ db.serialize(() => {
         }
     });
 
-    // 4. Departments
+    // Departments
     db.get("SELECT * FROM departments LIMIT 1", (err, row) => {
         if (!row) {
             const depts = ['Internal Medicine', 'Pediatrics', 'Obstetrics & Gynecology', 'Dermatology', 'Psychiatry', 'ENT', 'Pathology', 'Emergency'];
@@ -212,7 +213,7 @@ db.serialize(() => {
         }
     });
 
-    // 5. Doctors (6)
+    // Doctors (6)
     db.get("SELECT * FROM doctors LIMIT 1", (err, row) => {
         if (!row) {
             const doctors = [
@@ -233,7 +234,7 @@ db.serialize(() => {
         }
     });
 
-    // 6. Testimonials (4)
+    // Testimonials (4)
     db.get("SELECT * FROM testimonials LIMIT 1", (err, row) => {
         if (!row) {
             const testimonials = [
@@ -249,7 +250,7 @@ db.serialize(() => {
         }
     });
 
-    // 7. Health Packages (2)
+    // Health Packages (2)
     db.get("SELECT * FROM healthPackages LIMIT 1", (err, row) => {
         if (!row) {
             const packages = [
@@ -263,7 +264,7 @@ db.serialize(() => {
         }
     });
 
-    // 8. FAQs (4)
+    // FAQs (4)
     db.get("SELECT * FROM faqs LIMIT 1", (err, row) => {
         if (!row) {
             const faqs = [
@@ -324,6 +325,7 @@ app.post('/api/login', async (req, res) => {
         }
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
+
 app.post('/api/logout', (req, res) => { req.session.destroy(); res.json({ success: true }); });
 app.get('/api/session', (req, res) => {
     if (req.session.user) res.json({ loggedIn: true, user: req.session.user });
