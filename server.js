@@ -13,7 +13,7 @@ const sqlite3 = require('sqlite3').verbose();
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const session = require('express-session');
-const path = require('path');
+
 
 const app = express();
 const PORT = process.env.PORT || 3000;
