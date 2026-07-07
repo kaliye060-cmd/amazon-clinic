@@ -1,20 +1,18 @@
 const fs = require('fs');
 const path = require('path');
 
-// Ensure the /data directory exists
-// Use a local folder that Render can write to
+// Ensure the ./data directory exists
 const dataDir = './data';
 if (!fs.existsSync(dataDir)) {
     fs.mkdirSync(dataDir, { recursive: true });
     console.log(`📁 Created directory: ${dataDir}`);
 }
-// server.js – Full REST API with SQLite database (Complete)
+
 const express = require('express');
 const sqlite3 = require('sqlite3').verbose();
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const session = require('express-session');
-
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -136,14 +134,26 @@ db.serialize(() => {
         emergency TEXT
     )`);
 
-    // ---- SEED DATA (only if tables are empty) ----
-    // 1. Admin user
+    // ---- SEED DATA (with admin password reset) ----
+    // 1. Admin user – create if not exists, then always reset password
     db.get("SELECT * FROM users WHERE username = 'admin'", (err, row) => {
         if (!row) {
-            db.run("INSERT INTO users (username, password) VALUES ('admin', 'password')");
-            console.log('✅ Admin user created (admin / password)');
+            db.run("INSERT INTO users (username, password) VALUES ('admin', 'password')", function(err) {
+                if (!err) console.log('✅ Admin user created (admin / password)');
+                else console.error('Error creating admin:', err.message);
+            });
+        } else {
+            // Reset password to ensure it's always 'password'
+            db.run("UPDATE users SET password = 'password' WHERE username = 'admin'", function(err) {
+                if (err) {
+                    console.error('Error resetting admin password:', err.message);
+                } else {
+                    console.log('✅ Admin password reset to: password');
+                }
+            });
         }
     });
+
     // 2. Contact info
     db.get("SELECT * FROM contactInfo LIMIT 1", (err, row) => {
         if (!row) {
@@ -162,6 +172,7 @@ db.serialize(() => {
             console.log('✅ Contact info seeded.');
         }
     });
+
     // 3. Stats
     db.get("SELECT * FROM stats LIMIT 1", (err, row) => {
         if (!row) {
@@ -169,6 +180,7 @@ db.serialize(() => {
             console.log('✅ Stats seeded.');
         }
     });
+
     // 4. Services (14 items)
     db.get("SELECT * FROM services LIMIT 1", (err, row) => {
         if (!row) {
@@ -194,6 +206,7 @@ db.serialize(() => {
             console.log('✅ Services seeded (14 items).');
         }
     });
+
     // 5. Departments
     db.get("SELECT * FROM departments LIMIT 1", (err, row) => {
         if (!row) {
@@ -204,6 +217,7 @@ db.serialize(() => {
             console.log('✅ Departments seeded.');
         }
     });
+
     // 6. Doctors (6)
     db.get("SELECT * FROM doctors LIMIT 1", (err, row) => {
         if (!row) {
@@ -224,6 +238,7 @@ db.serialize(() => {
             console.log('✅ Doctors seeded (6).');
         }
     });
+
     // 7. Testimonials (4)
     db.get("SELECT * FROM testimonials LIMIT 1", (err, row) => {
         if (!row) {
@@ -239,6 +254,7 @@ db.serialize(() => {
             console.log('✅ Testimonials seeded (4).');
         }
     });
+
     // 8. Health Packages (2)
     db.get("SELECT * FROM healthPackages LIMIT 1", (err, row) => {
         if (!row) {
@@ -252,6 +268,7 @@ db.serialize(() => {
             console.log('✅ Health Packages seeded (2).');
         }
     });
+
     // 9. FAQs (4)
     db.get("SELECT * FROM faqs LIMIT 1", (err, row) => {
         if (!row) {
